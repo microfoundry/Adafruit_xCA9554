@@ -85,6 +85,13 @@ bool Adafruit_XCA9554::pinMode(uint8_t pin, uint8_t mode) {
     return false;
   }
 
+  // Mask to remove outputs from state  
+  if (mode == INPUT) {
+    _inputMask |= (1 << pin);
+  } else {
+    _inputMask &= ~(1 << pin);
+  }
+
   // Create a RegisterBits object for the specific pin
   Adafruit_BusIO_RegisterBits pinModeBit =
       Adafruit_BusIO_RegisterBits(config_reg, 1, pin);
@@ -94,6 +101,25 @@ bool Adafruit_XCA9554::pinMode(uint8_t pin, uint8_t mode) {
   } else {
     return pinModeBit.write(1); // Set bit to 1 for input
   }
+}
+
+/**
+ * @brief Set the inversion of a pin (TRUE/FALSE).
+ *
+ * @param pin The pin number (0-7) to set.
+ * @param val The inversion state to set the pin (true, false).
+ * @returns Whether we successfully wrote the bit to the register.
+ */
+bool Adafruit_XCA9554::pinInversion(uint8_t pin, bool val) {
+  if (!i2c_dev || !polarity_inversion_reg || pin > 7) {
+    return false; // Validate parameters
+  }
+
+  // Create a RegisterBits object for the specific pin
+  Adafruit_BusIO_RegisterBits inversionBit =
+      Adafruit_BusIO_RegisterBits(polarity_inversion_reg, 1, pin);
+
+  return inversionBit.write(val ? 1 : 0); // Set the pin state
 }
 
 /**
@@ -127,6 +153,13 @@ bool Adafruit_XCA9554::digitalRead(uint8_t pin) {
     return false; // Validate parameters
   }
 
+  // Update the _lastState bitfield
+  if (bitValue) {
+    _lastState |= (1 << pin);  // Set bit
+  } else {
+    _lastState &= ~(1 << pin); // Clear bit
+  }
+
   // Create a RegisterBits object for the specific pin
   Adafruit_BusIO_RegisterBits inputBit =
       Adafruit_BusIO_RegisterBits(input_port_reg, 1, pin);
@@ -135,4 +168,23 @@ bool Adafruit_XCA9554::digitalRead(uint8_t pin) {
   bitValue = inputBit.read();
 
   return bitValue != 0; // Return true if bit is high, false if low
+}
+
+/**
+ * @brief Read the state of the port.
+ *
+ * @returns The state of the port, filtering out any pins set as outputs.
+ */
+uint8_t Adafruit_XCA9554::getInterrupt() {
+  if (!i2c_dev || !input_port_reg) {
+    return 0; // Validate parameters
+  }
+
+  if (!input_port_reg->read(&_currentState)) {
+    return 0;
+  }
+  uint8_t changed = (_currentState ^ _lastState) & _inputMask;
+  _lastState = _currentState;
+
+  return changed; // Return true if bit is high, false if low
 }
