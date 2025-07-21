@@ -18,8 +18,10 @@ public:
 
   bool begin(uint8_t i2c_addr, TwoWire *wire = &Wire);
   bool pinMode(uint8_t pin, uint8_t mode);
+  bool pinInversion(uint8_t pin, bool val);
   bool digitalWrite(uint8_t pin, bool val);
   bool digitalRead(uint8_t pin);
+  uint8_t getInterrupt();
 
 private:
   Adafruit_I2CDevice *i2c_dev;
@@ -27,6 +29,9 @@ private:
   Adafruit_BusIO_Register *output_port_reg;
   Adafruit_BusIO_Register *polarity_inversion_reg;
   Adafruit_BusIO_Register *config_reg;
+  uint8_t _lastState;
+  uint8_t _currentState;
+  uint8_t _inputMask;
 };
 
 #endif // ADAFRUIT_XCA9554_H
