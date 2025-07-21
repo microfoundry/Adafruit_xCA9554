@@ -69,6 +69,9 @@ bool Adafruit_XCA9554::begin(uint8_t i2c_addr, TwoWire *wire) {
     return false;
   }
 
+  _lastState = 0x00;
+  _currentState = 0x00;
+  _inputMask = 0xFF;
   return true;
 }
 
