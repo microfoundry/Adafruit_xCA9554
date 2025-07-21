@@ -153,19 +153,19 @@ bool Adafruit_XCA9554::digitalRead(uint8_t pin) {
     return false; // Validate parameters
   }
 
-  // Update the _lastState bitfield
-  if (bitValue) {
-    _lastState |= (1 << pin);  // Set bit
-  } else {
-    _lastState &= ~(1 << pin); // Clear bit
-  }
-
   // Create a RegisterBits object for the specific pin
   Adafruit_BusIO_RegisterBits inputBit =
       Adafruit_BusIO_RegisterBits(input_port_reg, 1, pin);
 
   uint8_t bitValue;
   bitValue = inputBit.read();
+
+  // Update the _lastState bitfield
+  if (bitValue) {
+    _lastState |= (1 << pin);  // Set bit
+  } else {
+    _lastState &= ~(1 << pin); // Clear bit
+  }
 
   return bitValue != 0; // Return true if bit is high, false if low
 }
